@@ -90,6 +90,7 @@ public class GameDemoRenderer implements GLSurfaceView.Renderer {
     public void onSurfaceChanged(GL10 gl, int width, int height) {
         glViewport(0, 0, width, height);
     }
+    
 
     @Override
     public void onDrawFrame(GL10 gl) {
