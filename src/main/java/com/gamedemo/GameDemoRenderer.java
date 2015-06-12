@@ -11,42 +11,53 @@ import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
 import static android.opengl.GLES20.*;
+import static android.opengl.Matrix.multiplyMM;
+import static android.opengl.Matrix.orthoM;
+import static android.opengl.Matrix.rotateM;
+import static android.opengl.Matrix.setIdentityM;
+import static android.opengl.Matrix.translateM;
 
 public class GameDemoRenderer implements GLSurfaceView.Renderer {
 
-    private static final int POSITION_COMPONENT_COUNT = 2;
-    private static final int BYTES_PER_FLOAT = 4;
-    private final Context context;
-
-    private int program;
-
+    private static final int POSITION_COMPONENT_COUNT = 4;
     private static final int COLOR_COMPONENT_COUNT = 3;
+    private static final int BYTES_PER_FLOAT = 4;
+
+    private final Context context;
 
     private static final int STRIDE =
             (POSITION_COMPONENT_COUNT + COLOR_COMPONENT_COUNT) * BYTES_PER_FLOAT;
 
     private static final String A_COLOR = "a_Color";
-    private int aColorLocation;
-
+    private static final String U_MATRIX = "u_Matrix";
     private static final String A_POSITION = "a_Position";
+
+    private int uMatrixLocation;
+    private int aColorLocation;
     private int aPositionLocation;
+
+    private int program;
+
+    private final float[] projectionMatrix = new float[16];
+    private final float[] modelMatrix = new float[16];
 
     private final FloatBuffer vertexData;
 
     float[] tableTriangleVertices = {
-            // Order of coordinates: X, Y, R, G, B
-            0f, 0f, 1f, 1f, 1f,
-            -0.5f, -0.5f, 0.7f, 0.7f, 0.7f,
-            0.5f, -0.5f, 0.7f, 0.7f, 0.7f,
-            0.5f, 0.5f, 0.7f, 0.7f, 0.7f,
-            -0.5f, 0.5f, 0.7f, 0.7f, 0.7f,
-            -0.5f, -0.5f, 0.7f, 0.7f, 0.7f,
+            // Order of coordinates: X, Y, Z, W, R, G, B
 
-            -0.5f, 0f, 1f, 0f, 0f,
-            0.5f, 0f, 1f, 0f, 0f,
+            0f, 0f, 0f,     1f, 1f, 1f, 1f,
+            -0.5f, -0.8f, 0f, 1f, 0.7f, 0.7f, 0.7f,
+            0.5f, -0.8f, 0f, 1f, 0.7f, 0.7f, 0.7f,
+            0.5f, 0.8f, 0f, 1f, 0.7f, 0.7f, 0.7f,
+            -0.5f, 0.8f, 0f, 1f, 0.7f, 0.7f, 0.7f,
+            -0.5f, -0.8f, 0f, 1f, 0.7f, 0.7f, 0.7f,
 
-            0f, -0.25f, 0f, 0f, 1f,
-            0f, 0.25f, 1f, 0f, 0f
+            -0.5f, 0f, 0f, 1f, 1f, 0f, 0f,
+            0.5f, 0f, 0f, 1f, 1f, 0f, 0f,
+
+            0f, -0.4f, 0f, 1f, 0f, 0f, 1f,
+            0f, 0.4f, 0f, 1f, 1f, 0f, 0f
     };
 
     public GameDemoRenderer(Context context) {
@@ -77,19 +88,18 @@ public class GameDemoRenderer implements GLSurfaceView.Renderer {
         glUseProgram(program);
 
         aColorLocation = glGetAttribLocation(program, A_COLOR);
-
         aPositionLocation = glGetAttribLocation(program, A_POSITION);
+        uMatrixLocation = glGetUniformLocation(program, U_MATRIX);
 
         vertexData.position(0);
 
         glVertexAttribPointer(aPositionLocation, POSITION_COMPONENT_COUNT, GL_FLOAT,
                 false, STRIDE, vertexData);
-
         glEnableVertexAttribArray(aPositionLocation);
-
         glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 
         vertexData.position(POSITION_COMPONENT_COUNT);
+
         glVertexAttribPointer(aColorLocation, COLOR_COMPONENT_COUNT, GL_FLOAT,
                 false, STRIDE, vertexData);
         glEnableVertexAttribArray(aColorLocation);
@@ -98,12 +108,31 @@ public class GameDemoRenderer implements GLSurfaceView.Renderer {
     @Override
     public void onSurfaceChanged(GL10 gl, int width, int height) {
         glViewport(0, 0, width, height);
+//        final float aspectRatio = width > height ?
+//                (float) width / (float) height : (float) height / (float) width;
+//        if (width > height) {
+//            orthoM(projectionMatrix, 0, -aspectRatio, aspectRatio, -1f, 1f, -1f, 1f);
+//        } else {
+//            orthoM(projectionMatrix, 0, -1f, 1f, -aspectRatio, aspectRatio, -1f, 1f);
+//        }
+        MatrixHelper.perspectiveM(projectionMatrix, 45,
+                (float) width / (float) height, 1f, 10f);
+        setIdentityM(modelMatrix, 0);
+
+        translateM(modelMatrix, 0, 0f, 0f, -2.0f);
+//        rotateM(modelMatrix, 0, -60f, 1f, 0f, 0f);
+
+        final float[] temp = new float[16];
+        multiplyMM(temp, 0, projectionMatrix, 0, modelMatrix, 0);
+        System.arraycopy(temp, 0, projectionMatrix, 0, temp.length);
     }
-    
+
 
     @Override
     public void onDrawFrame(GL10 gl) {
         glClear(GL_COLOR_BUFFER_BIT);
+
+        glUniformMatrix4fv(uMatrixLocation, 1, false, projectionMatrix, 0);
 
         glDrawArrays(GL_TRIANGLE_FAN, 0, 6);
         glDrawArrays(GL_LINES, 6, 2);
