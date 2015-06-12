@@ -20,8 +20,13 @@ public class GameDemoRenderer implements GLSurfaceView.Renderer {
 
     private int program;
 
-    private static final String U_COLOR = "u_Color";
-    private int uColorLocation;
+    private static final int COLOR_COMPONENT_COUNT = 3;
+
+    private static final int STRIDE =
+            (POSITION_COMPONENT_COUNT + COLOR_COMPONENT_COUNT) * BYTES_PER_FLOAT;
+
+    private static final String A_COLOR = "a_Color";
+    private int aColorLocation;
 
     private static final String A_POSITION = "a_Position";
     private int aPositionLocation;
@@ -29,20 +34,19 @@ public class GameDemoRenderer implements GLSurfaceView.Renderer {
     private final FloatBuffer vertexData;
 
     float[] tableTriangleVertices = {
+            // Order of coordinates: X, Y, R, G, B
+            0f, 0f, 1f, 1f, 1f,
+            -0.5f, -0.5f, 0.7f, 0.7f, 0.7f,
+            0.5f, -0.5f, 0.7f, 0.7f, 0.7f,
+            0.5f, 0.5f, 0.7f, 0.7f, 0.7f,
+            -0.5f, 0.5f, 0.7f, 0.7f, 0.7f,
+            -0.5f, -0.5f, 0.7f, 0.7f, 0.7f,
 
-            -0.5f, -0.5f,
-            0.5f, 0.5f,
-            -0.5f, 0.5f,
+            -0.5f, 0f, 1f, 0f, 0f,
+            0.5f, 0f, 1f, 0f, 0f,
 
-            -0.5f, -0.5f,
-            0.5f, -0.5f,
-            0.5f, 0.5f,
-
-            -0.5f, 0f,
-            0.5f, 0f,
-
-            0f, -0.25f,
-            0f, 0.25f
+            0f, -0.25f, 0f, 0f, 1f,
+            0f, 0.25f, 1f, 0f, 0f
     };
 
     public GameDemoRenderer(Context context) {
@@ -72,18 +76,23 @@ public class GameDemoRenderer implements GLSurfaceView.Renderer {
 
         glUseProgram(program);
 
-        uColorLocation = glGetUniformLocation(program, U_COLOR);
+        aColorLocation = glGetAttribLocation(program, A_COLOR);
 
         aPositionLocation = glGetAttribLocation(program, A_POSITION);
 
         vertexData.position(0);
 
         glVertexAttribPointer(aPositionLocation, POSITION_COMPONENT_COUNT, GL_FLOAT,
-                false, 0, vertexData);
+                false, STRIDE, vertexData);
 
         glEnableVertexAttribArray(aPositionLocation);
 
         glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+
+        vertexData.position(POSITION_COMPONENT_COUNT);
+        glVertexAttribPointer(aColorLocation, COLOR_COMPONENT_COUNT, GL_FLOAT,
+                false, STRIDE, vertexData);
+        glEnableVertexAttribArray(aColorLocation);
     }
 
     @Override
@@ -93,19 +102,11 @@ public class GameDemoRenderer implements GLSurfaceView.Renderer {
 
     @Override
     public void onDrawFrame(GL10 gl) {
-
         glClear(GL_COLOR_BUFFER_BIT);
 
-        glUniform4f(uColorLocation, 1.0f, 1.0f, 1.0f, 1.0f);
-        glDrawArrays(GL_TRIANGLES, 0, 6);
-
-        glUniform4f(uColorLocation, 1.0f, 0.0f, 0.0f, 1.0f);
+        glDrawArrays(GL_TRIANGLE_FAN, 0, 6);
         glDrawArrays(GL_LINES, 6, 2);
-
-        glUniform4f(uColorLocation, 0.0f, 0.0f, 1.0f, 1.0f);
         glDrawArrays(GL_POINTS, 8, 1);
-
-        glUniform4f(uColorLocation, 1.0f, 0.0f, 0.0f, 1.0f);
         glDrawArrays(GL_POINTS, 9, 1);
     }
 }
