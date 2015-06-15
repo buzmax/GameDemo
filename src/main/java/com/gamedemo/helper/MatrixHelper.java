@@ -1,4 +1,4 @@
-package com.gamedemo;
+package com.gamedemo.helper;
 
 public class MatrixHelper {
     public static void perspectiveM(float[] m, float yFovInDegrees,

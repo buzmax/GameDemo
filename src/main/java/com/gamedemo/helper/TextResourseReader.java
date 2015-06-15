@@ -1,4 +1,4 @@
-package com.gamedemo;
+package com.gamedemo.helper;
 
 import android.content.Context;
 import android.content.res.Resources;
