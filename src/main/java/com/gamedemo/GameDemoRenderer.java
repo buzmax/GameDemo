@@ -65,26 +65,18 @@ public class GameDemoRenderer implements GLSurfaceView.Renderer {
 
         Ray ray = convertNormalized2DPointToRay(normalizedX, normalizedY);
 
-        // Now test if this ray intersects with the mallet by creating a
-        // bounding sphere that wraps the mallet.
         Sphere malletBoundingSphere = new Sphere(new Point(
                 blueMalletPosition.x,
                 blueMalletPosition.y,
                 blueMalletPosition.z),
                 mallet.height / 2f);
 
-        // If the ray intersects (if the user touched a part of the screen that
-        // intersects the mallet's bounding sphere), then set malletPressed =
-        // true.
         malletPressed = Geometry.intersects(malletBoundingSphere, ray);
     }
 
     private Ray convertNormalized2DPointToRay(
             float normalizedX, float normalizedY) {
-        // We'll convert these normalized device coordinates into world-space
-        // coordinates. We'll pick a point on the near and far planes, and draw a
-        // line between them. To do this transform, we need to first multiply by
-        // the inverse matrix, and then we need to undo the perspective divide.
+
         final float[] nearPointNdc = {normalizedX, normalizedY, -1, 1};
         final float[] farPointNdc = {normalizedX, normalizedY, 1, 1};
 
@@ -94,15 +86,9 @@ public class GameDemoRenderer implements GLSurfaceView.Renderer {
         multiplyMV(nearPointWorld, 0, invertedViewProjectionMatrix, 0, nearPointNdc, 0);
         multiplyMV(farPointWorld, 0, invertedViewProjectionMatrix, 0, farPointNdc, 0);
 
-        // Why are we dividing by W? We multiplied our vector by an inverse
-        // matrix, so the W value that we end up is actually the *inverse* of
-        // what the projection matrix would create. By dividing all 3 components
-        // by W, we effectively undo the hardware perspective divide.
         divideByW(nearPointWorld);
         divideByW(farPointWorld);
 
-        // We don't care about the W value anymore, because our points are now
-        // in world coordinates.
         Geometry.Point nearPointRay =
                 new Geometry.Point(nearPointWorld[0], nearPointWorld[1], nearPointWorld[2]);
 
@@ -124,19 +110,12 @@ public class GameDemoRenderer implements GLSurfaceView.Renderer {
 
         if (malletPressed) {
             Ray ray = convertNormalized2DPointToRay(normalizedX, normalizedY);
-            // Define a plane representing our air hockey table.
             Plane plane = new Plane(new Geometry.Point(0, 0, 0), new Vector(0, 1, 0));
-            // Find out where the touched point intersects the plane
-            // representing our table. We'll move the mallet along this plane.
+
             Point touchedPoint = Geometry.intersectionPoint(ray, plane);
-            // Clamp to bounds
 
             previousBlueMalletPosition = blueMalletPosition;
-            /*
-            blueMalletPosition =
-                new Point(touchedPoint.x, mallet.height / 2f, touchedPoint.z);
-            */
-            // Clamp to bounds
+
             blueMalletPosition = new Point(
                     clamp(touchedPoint.x,
                             leftBound + mallet.radius,
@@ -146,13 +125,10 @@ public class GameDemoRenderer implements GLSurfaceView.Renderer {
                             0f + mallet.radius,
                             nearBound - mallet.radius));
 
-            // Now test if mallet has struck the puck.
             float distance =
                     Geometry.vectorBetween(blueMalletPosition, puckPosition).length();
 
             if (distance < (puck.radius + mallet.radius)) {
-                // The mallet has struck the puck. Now send the puck flying
-                // based on the mallet velocity.
                 puckVector = Geometry.vectorBetween(
                         previousBlueMalletPosition, blueMalletPosition);
             }
